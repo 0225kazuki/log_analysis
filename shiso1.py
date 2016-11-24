@@ -9,8 +9,16 @@ import numpy as np
 import sqlite3
 import Levenshtein
 import datetime
+import time
 
+HEADER_OFFSET = 4
 parse_char = ['(',')','[',']','=']
+
+'''
+start_time = time.time()
+end_time = time.time()
+print('xxxx:',end_time - start_time)
+'''
 
 node_num = 0
 
@@ -18,7 +26,7 @@ class Node():
     def __init__(self,parent,value):
         self.parent = parent #親
         self.value = value #データ
-        self.c_node = [] #子 Max4
+        self.c_node = [] #子
 
     def add_node(self,add_node): #ノード追加
         global node_num
@@ -65,7 +73,7 @@ def word_split(log):
     w = re.split(' +',w[:-1])
     if w[-1] == '':
         w = w[:-1]
-    return w[4:]
+    return w[HEADER_OFFSET:]
 
 def word_coord(w):#単語 or listが入ってくる
     if isinstance(w,list):
@@ -212,27 +220,40 @@ filename = sys.argv[1]
 fd = open(filename)
 log = fd.readline()
 
+
+'''start_time = time.time()
+end_time = time.time()
+print('xxxx:',end_time - start_time)
+'''
 dbname = sys.argv[1].split('/')[1]
 print(dbname)
 while log:
     #Algorithm 1
+    # start_time = time.time()
     if cnt%100 == 0:
         print('cnt:',cnt)
 
+    start_time1 = time.time()
     n = Node(None,word_split(log))
-
+    # end_time1 = time.time()
+    # print('create node:',end_time1 - start_time1)
     # print ('\ninput ',log,n.value)
     f = None
     nparent = root_node
     # print('parent-child',nparent.c_node)
     t = 0.95
     while f == None:
+        # start_time2 = time.time()
         for nchild in nparent.c_node:#子ノードと新規ログを比較
             if seqratio(n.value,nchild.value) > t:#seqratioが閾値超えたらマージして終わり。
                 f = make_format(n.value,nchild.value)
                 nchild.value = f
                 break
+        # end_time2 = time.time()
+        # print('search tree:',end_time2 - start_time2)
 
+
+        # start_time3 = time.time()
         if f == None:
             if len(nparent.c_node) < 64:
                 f = make_format(w1 = n.value)
@@ -248,15 +269,17 @@ while log:
                 if r == 1:#どのノードともsimrateが0となった場合
                     next_parent = nparent.c_node[0]
                 nparent = next_parent
+
+        # end_time3 = time.time()
+        # print('search tree2:',end_time3 - start_time3)
+
     cnt +=1
-    if cnt > 200000:
-        break;
+    # if cnt > 200000:
+    #     break;
     log = fd.readline()
+    # end_time = time.time()
+    # print('1 transaction:',end_time - start_time)
 fd.close()
-# print_format(root_node.c_node[0].value.format)
-# print_format(root_node.c_node[1].value.format)
-# print_format(root_node.c_node[2].value.format)
-# print_format(root_node.c_node[3].value.format)
 
 create_db(root_node,dbname)
 print("job finished:",filename)
