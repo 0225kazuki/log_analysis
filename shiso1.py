@@ -8,8 +8,10 @@ import sys
 import numpy as np
 import sqlite3
 import Levenshtein
-import datetime
 import time
+import tqdm
+import os.path
+
 
 HEADER_OFFSET = 4
 parse_char = ['(',')','[',']','=']
@@ -186,6 +188,8 @@ def get_datetime_str():
 def create_db(nparent,dbname):
     con = sqlite3.connect("{0}.db".format(dbname) )
     cur = con.cursor()
+    # cur.execute("""drop table if exists Node""")
+    # print('create_db')
     cur.execute("""create table if not exists Node (id integer primary key,f text,cnt integer)""")
     # con.execute("PRAGMA busy_timeout = 30000")
     for node_row in nparent.c_node:
@@ -212,35 +216,45 @@ def create_db(nparent,dbname):
             create_db(node_row,dbname)
 
 
+### main
 cnt = 0
 root_node = Node(None, None)
-
 
 filename = sys.argv[1]
 fd = open(filename)
 log = fd.readline()
+path = sys.argv[1]
+dbname = path.split('/')[-2]
+filesize = os.path.getsize(path)
+line_num = sum(1 for line in open(path))
+
+# print(dbname)
+print('filesize:',filesize)
+print('line num:',line_num)
 
 
-'''start_time = time.time()
-end_time = time.time()
-print('xxxx:',end_time - start_time)
-'''
-dbname = sys.argv[1].split('/')[1]
-print(dbname)
-while log:
+get_date_flag = 0
+# while log:
+for _ in tqdm.tqdm(range(line_num)):
     #Algorithm 1
     # start_time = time.time()
-    if cnt%100 == 0:
-        print('cnt:',cnt)
+    # if cnt%100 == 0:
+    #     print('cnt:',cnt)
+    if get_date_flag == 0:
+        month = log.split()[0]
+        day = log.split()[1]
+        get_date_flag = 1
+
+    if log.split()[0] != month or log.split()[1] != day:
+        log = fd.readline()
+        continue
 
     start_time1 = time.time()
     n = Node(None,word_split(log))
     # end_time1 = time.time()
     # print('create node:',end_time1 - start_time1)
-    # print ('\ninput ',log,n.value)
     f = None
     nparent = root_node
-    # print('parent-child',nparent.c_node)
     t = 0.95
     while f == None:
         # start_time2 = time.time()
@@ -248,10 +262,10 @@ while log:
             if seqratio(n.value,nchild.value) > t:#seqratioが閾値超えたらマージして終わり。
                 f = make_format(n.value,nchild.value)
                 nchild.value = f
+                # print('seqratio > t:')
                 break
         # end_time2 = time.time()
         # print('search tree:',end_time2 - start_time2)
-
 
         # start_time3 = time.time()
         if f == None:
@@ -274,12 +288,27 @@ while log:
         # print('search tree2:',end_time3 - start_time3)
 
     cnt +=1
-    # if cnt > 200000:
-    #     break;
+    # if cnt > 7000:
+    #     break
     log = fd.readline()
     # end_time = time.time()
     # print('1 transaction:',end_time - start_time)
 fd.close()
 
+# def print_node(parent):
+#     for child in parent.c_node:
+#         if(child.c_node != []):
+#             print_node(child)
+#         else:
+#             print(child.value.format)
+#
+# print_node(root_node)
+
+# initialize DB
+# con = sqlite3.connect("{0}.db".format(dbname) )
+# cur = con.cursor()
+# con.commit()
+# con.close()
+# cur.execute("""drop table if exists Node""")
 create_db(root_node,dbname)
 print("job finished:",filename)
