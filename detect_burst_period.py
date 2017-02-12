@@ -143,9 +143,25 @@ def period_analysis(time_lists):
                 print('hourly_cnt',hourly_cnt,len(time_list))
                 if len(time_list) > 20:#20件以上あったらランダムとして集約
                     israndom = 1
+                    all_random_logs = sum(hourly_cnt)
+                    hourly_avg = all_random_logs/len(hourly_cnt)
 
-            period_analysis_result[ind] = [period,israndom,irregular_time]
+            if israndom != 1:
+                period_analysis_result[ind] = [period,israndom,irregular_time]
+            elif israndom == 1:
+                period_analysis_result[ind] = [period,israndom,all_random_logs,hourly_avg]
     return period_analysis_result
+
+# tmps = [(tmp1,),(tmp2,),(tmp3,)]
+# all=1で全テンプレート表示
+def print_tmps(tmps,all=0):
+    if all == 1:
+        for tmp in tmps:
+            print(tmp[0])
+    else:
+        most = sorted([(tmp[0],collections.Counter(tmp[0])['*']) for tmp in tmps],key=lambda x:x[1],reverse=True)
+        print(most[0][0])
+    return 0
 
 if __name__ == '__main__':
 
@@ -153,7 +169,7 @@ if __name__ == '__main__':
 
 
     # bursts = burst_detect.burst_detect(time_lists)
-    bursts = burst_detect.m_burst_detect(time_lists,2)
+    bursts = burst_detect.m_burst_detect(time_lists,3)
 
     print('bursts',bursts)
     bursts_dict = {k:v for k,v in bursts}# { id : [ [lv,st,en,cnt,dens], ]}
@@ -170,7 +186,7 @@ if __name__ == '__main__':
             time_lists[i] = non_burst_time
 
     st = time.time()
-    period_analysis_result = m_period_analysis(time_lists,2)
+    period_analysis_result = m_period_analysis(time_lists,3)
     en = time.time()
     print(en-st)
 
@@ -186,46 +202,62 @@ if __name__ == '__main__':
     other  ->  bottom_log_list = [(time,temp)]
     '''
 
+    print('\nRESULT')
     for ind,time_list in time_lists.items():
         con = sqlite3.connect(FILENAME)
         cur = con.cursor()
 
         cur.execute("""select f from format where id = {0}""".format(ind))
-        temp = cur.fetchall()[0][0]
+        # temp = cur.fetchall()[0][0]
+        temp = cur.fetchall()
 
         if not isinstance(bursts_dict.get(ind,0),int):#burst性あり
             head_log_list.append(('burst',temp,bursts_dict[ind]))
         if period_analysis_result[ind][0] != 0:#周期あり
             head_log_list.append(('periodical',temp,period_analysis_result[ind][0],period_analysis_result[ind][2]))
         elif period_analysis_result[ind][1] == 1:#random性あり
-            head_log_list.append(('random',temp))
+            head_log_list.append(('random',temp,period_analysis_result[ind][2],period_analysis_result[ind][3]))
         else:#others
             cur.execute("""select time,log from '{0}' """.format(ind))
             time_log_list = cur.fetchall()
             time_log_list = sorted([(t,l) for t,l in time_log_list if t in time_list])
             for sec,l in time_log_list:
-                print(sec,sec2time(sec),l)
                 bottom_log_list.append((sec,l))
 
+        print('\nID',ind)
+        print(temp)
+        if bursts_dict.get(ind,0) != 0:
+            print(bursts_dict[ind])
+        else:
+            print('no burst')
+        print(period_analysis_result[ind][:2])
+
+
+
         # head_log_list = sorted(head_log_list)
-        print('\n')
 
         con.close()
 
     '''reduce結果の最終表示'''
     print('\nTop: Log Summary (',len(head_log_list),' blocks)')
+    head_log_list = sorted(head_log_list)
     for row in head_log_list:
         if row[0] == 'burst':
-            print('Burst detected:',row[1])
+            # print('Burst detected:',row[1])
+            print('Burst detected:')
+            print_tmps(row[1])
             for lv,st,en,cnt,dens in row[2]:
                 print('\t',sec2time(st),'-',sec2time(en),'\t',cnt,'\t',dens,'cnt/min')
         elif row[0] == 'periodical':
-            print('Period detected:',row[1])
+            print('Period detected:')
+            print_tmps(row[1])
             print('\t',row[2],'sec')
-            if row[3] != []:
-                print('Irregular points:',row[3])
+            # if row[3] != []:
+            #     print('Irregular points:',row[3])
         elif row[0] == 'random':
-            print('Random log:',row[1])
+            print('Random log:')
+            print_tmps(row[1])
+            print('\t',row[2],'cnt/hour\t',row[3])
         print('\n')
     print('\nBottom: Row Log messages (',len(bottom_log_list),' lines)')
     for sec,log in sorted(bottom_log_list):

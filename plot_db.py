@@ -43,10 +43,10 @@ def get_time_stamp():
 
 if __name__ == '__main__':
     time_lists = get_time_stamp()
-    pprint.pprint(time_lists)
+    # pprint.pprint(time_lists)
 
     for i,time_list in time_lists.items():
-        # if i != 445:
+        # if i != 1:
         #     continue
 
 
@@ -61,6 +61,8 @@ if __name__ == '__main__':
         x = [0,1,2,3,...] -> x = [0,1,1,2,2,3,3,...]
         y = [a,b,c,d,...] -> y = [a,a,b,b,c,c,d,d,...]
         '''
+        time_list=np.append(time_list,0)
+        time_list=np.append(time_list,86399)
         x_cnt_dict = [(k,v) for k,v in sorted(collections.Counter(time_list).items())]
         x = np.array(list(set(time_list)))
         x_hist = np.array(list(set(time_list)))
@@ -91,14 +93,18 @@ if __name__ == '__main__':
         title = cur.fetchall()
         con.commit()
         con.close()
-        plt.title(title,fontsize='22')
+        # plt.title(title,fontsize='22')
+        # plt.title('3 times burst(60min, 1.0cnt/min)',fontsize='22')
 
         plt.xlim(0,86400)
 
-        plt.xlabel("time(sec)",fontsize='30')
+        sec_list = [z*60*60 for z in range(0,24) if z%2 == 0]
+        label_list = [str(z)+':00' for z in range(0,24) if z%2 == 0]
+        plt.xticks(sec_list,label_list)
+        plt.xlabel("time",fontsize='30')
         plt.ylabel("count",fontsize='30')
         plt.tick_params(labelsize=22)
-        plt.legend()
+        # plt.legend()
         plt.savefig("{0}burst.png".format(i))
 
         plt.figure(figsize=(18, 12))
@@ -118,13 +124,13 @@ if __name__ == '__main__':
 
 
         interval_cnt = sorted(collections.Counter(interval_list).items())
-        print(interval_cnt)
+        # print(interval_cnt)
 
         x = [z[0] for z in interval_cnt]
         y = [z[1] for z in interval_cnt]
 
-        print(x)
-        print(y)
+        # print(x)
+        # print(y)
         # plt.ylim(0,30)###########
         if max(x) < 30:
             plt.xlim([-5,30])

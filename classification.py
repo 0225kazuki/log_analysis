@@ -47,6 +47,7 @@ def get_ft():
 #return: 0 -> match, other -> not match
 def compare_f(log,fmt):
     l = word_split(log)
+    # print(l)
     f = fmt.split()
     if len(l) != len(f):#まず長さで評価
         return 1
@@ -111,12 +112,13 @@ if __name__ == '__main__':
 
         #date 取得
         if get_date_flag == 0:
-            month = log[0]
-            day = log[1]
+            month = log.split()[0]
+            day = log.split()[1]
+            # print(month,day)
             get_date_flag = 1
 
         #date 不一致のものは弾く
-        if log[0] != month or log[1] != day:
+        if log.split()[0] != month or log.split()[1] != day:
             log = fd.readline()
             continue
 

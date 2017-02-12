@@ -92,12 +92,15 @@ def burst_detect(time_lists):
                 time_list.append(86400)
             if time_list[0] != 0:
                 time_list.insert(0,0)
+
+
+            # print('len',time_list[:10])
             #バースト検知
             burst_list = pybursts.pybursts.kleinberg(sorted(set(time_list)),s=2,gamma=1.0)
 
             # print(time_list[:20])
-            # print(set(time_list))
-            # print(burst_list)
+            print(len(set(time_list)))
+            print(burst_list)
 
             #ここで重複レベルを削除
             for j in range(len(burst_list)-1):
@@ -138,7 +141,7 @@ def burst_detect(time_lists):
 
             #バーストツリー表示
             print(ind,'result')
-            # show_burst_tree(root_node)
+            show_burst_tree(root_node)
 
             '''
             #バーストツリー走査
@@ -198,24 +201,30 @@ if __name__ == '__main__':
     con = sqlite3.connect(dbname)
     cur = con.cursor()
     time_lists={}
-    for i in range(1,4):
+    for i in range(290,295):
         print(i)
         cur.execute("""select time from '{0}'""".format(i))
         time_list = np.sort(np.array([x[0] for x in cur.fetchall()]))
-        time_list[0] = 40000
+
+        time_list = time_list - 43000
+
+        # time_list[int(np.size(time_list)/2):] = 0
         time_lists[i] = time_list
     con.commit()
     con.close()
 
-    # time_list = time_list.astype(np.float64)
-    # for i in range(len(time_list)):
-    #     if i == 0:
-    #         continue
-    #     if math.floor(time_list[i-1]) == time_list[i]:#秒単位でも重複がある場合は少数3桁でカウントしていく
-    #         time_list[i] = round(time_list[i-1] + 0.0001,4)
+    # for ind,time_list in time_lists.items():
+    #     # time_list = time_list.astype(np.float64)
+    #     for i in range(len(time_list)):
+    #         if i == 0:
+    #             continue
+    #         if math.floor(time_list[i-1]) == time_list[i]:#秒単位でも重複がある場合は少数3桁でカウントしていく
+    #             print('hit')
+    #             time_list[i] = round(time_list[i-1] + 0.0001,4)
 
+    # print('len',time_lists[343][100:120])
     start_time = time.time()
-    print(m_burst_detect(time_lists,3))
+    print(m_burst_detect(time_lists,1))
     end_time = time.time()
     print(end_time - start_time)
 

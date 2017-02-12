@@ -13,7 +13,7 @@ import tqdm
 import os.path
 
 
-HEADER_OFFSET = 4
+HEADER_OFFSET = 5
 parse_char = ['(',')','[',']','=']
 
 '''
@@ -224,7 +224,8 @@ filename = sys.argv[1]
 fd = open(filename)
 log = fd.readline()
 path = sys.argv[1]
-dbname = path.split('/')[-2]
+# dbname = path.split('/')[-2]
+dbname = path
 filesize = os.path.getsize(path)
 line_num = sum(1 for line in open(path))
 
